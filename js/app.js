@@ -19,14 +19,19 @@ const inputAnoMax       = document.getElementById("anos-max");
 const btnBuscar         = document.getElementById("btn-buscar");
 const btnMovie          = document.getElementById("movie");
 const btnTv             = document.getElementById("tv");
+const btnAnterior       = document.getElementById("pagina-anterior");
+const btnSiguiente      = document.getElementById("pagina-siguiente");
+const popup             = document.getElementById("media");
+const popupContenedor   = document.getElementById("media-contenedor");
 
 /* =============================================
    ESTADO DE LA APLICACIÓN
    ============================================= */
 let estado = {
-  tipo:     "movie",
-  pagina:   1,
-  idGenero: null,
+  tipo:          "movie",
+  pagina:        1,
+  idGenero:      null,
+  usarDescubrir: false, // recuerda si el último fetch fue con filtros
 };
 
 /* =============================================
@@ -88,7 +93,6 @@ async function fetchDescubrir() {
   const anoMin = inputAnoMin.value || 1950;
   const anoMax = inputAnoMax.value || 2025;
 
-  // Validación de rango de años
   if (parseInt(anoMin) > parseInt(anoMax)) {
     inputAnoMin.classList.add("sidebar__input--error");
     inputAnoMax.classList.add("sidebar__input--error");
@@ -100,7 +104,6 @@ async function fetchDescubrir() {
   inputAnoMax.classList.remove("sidebar__input--error");
 
   let url;
-
   if (tipo === "movie") {
     url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=es-MX&page=${pagina}`
         + `&release_date.gte=${anoMin}-01-01`
@@ -119,6 +122,16 @@ async function fetchDescubrir() {
   if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
   const datos = await respuesta.json();
   return datos.results;
+}
+
+/* =============================================
+   FETCH: DETALLE DE UN TÍTULO
+   ============================================= */
+async function fetchDetalle(id) {
+  const url = `${BASE_URL}/${estado.tipo}/${id}?api_key=${API_KEY}&language=es-MX`;
+  const respuesta = await fetch(url);
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  return respuesta.json();
 }
 
 /* =============================================
@@ -188,9 +201,55 @@ function renderGeneros(generos) {
 }
 
 /* =============================================
+   RENDER: POPUP DE DETALLE
+   ============================================= */
+function mostrarPopup(item) {
+  const titulo      = item.title || item.name || "Sin título";
+  const fecha       = item.release_date || item.first_air_date || "—";
+  const overview    = item.overview || "Sin descripción disponible.";
+  const posterSrc   = item.poster_path
+                      ? `${IMG_URL}${item.poster_path}`
+                      : IMG_PLACEHOLDER;
+  const backdropSrc = item.backdrop_path
+                      ? `${IMG_URL}${item.backdrop_path}`
+                      : null;
+
+  popupContenedor.innerHTML = `
+    ${backdropSrc ? `
+      <div class="media__backdrop" aria-hidden="true">
+        <img src="${backdropSrc}" class="media__backdrop-image" alt="" />
+      </div>` : ""}
+    <div class="media__imagen">
+      <img src="${posterSrc}" class="media__poster" alt="Póster de ${titulo}" />
+    </div>
+    <div class="media__info">
+      <h2 class="media__titulo">${titulo}</h2>
+      <p class="media__fecha">${fecha}</p>
+      <p class="media__overview">${overview}</p>
+    </div>
+    <button class="media__btn-cerrar btn" id="btn-cerrar-popup" aria-label="Cerrar detalle">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+      </svg>
+    </button>
+  `;
+
+  popup.hidden = false;
+
+  // Foco al botón cerrar para accesibilidad
+  document.getElementById("btn-cerrar-popup")?.focus();
+}
+
+function cerrarPopup() {
+  popup.hidden = true;
+  popupContenedor.innerHTML = "";
+}
+
+/* =============================================
    CARGA PRINCIPAL
    ============================================= */
 async function cargar(usarDescubrir = false) {
+  estado.usarDescubrir = usarDescubrir;
   mostrarEstado("Cargando...", "cargando");
 
   try {
@@ -201,7 +260,7 @@ async function cargar(usarDescubrir = false) {
       ? await fetchDescubrir()
       : await fetchPopulares(estado.tipo, estado.pagina);
 
-    if (resultados === null) return; // Error de validación
+    if (resultados === null) return;
 
     renderTarjetas(resultados, generos);
     actualizarNumeroPagina();
@@ -250,13 +309,11 @@ contenedorGeneros.addEventListener("click", (e) => {
 
   const estaActivo = btn.classList.contains("btn--active");
 
-  // Quita activo de todos
   contenedorGeneros.querySelectorAll(".btn").forEach((b) => {
     b.classList.remove("btn--active");
     b.setAttribute("aria-pressed", "false");
   });
 
-  // Toggle: si ya estaba activo lo desactiva
   if (!estaActivo) {
     btn.classList.add("btn--active");
     btn.setAttribute("aria-pressed", "true");
@@ -273,7 +330,67 @@ btnBuscar.addEventListener("click", async () => {
   estado.pagina = 1;
   const labelTipo = estado.tipo === "movie" ? "Películas" : "Series";
   tituloGaleria.textContent = `Resultados — ${labelTipo}`;
-  await cargar(true); // usa fetchDescubrir
+  await cargar(true);
+});
+
+/* =============================================
+   LISTENERS — PAGINACIÓN
+   ============================================= */
+btnSiguiente.addEventListener("click", async () => {
+  estado.pagina += 1;
+  await cargar(estado.usarDescubrir);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+btnAnterior.addEventListener("click", async () => {
+  if (estado.pagina <= 1) return;
+  estado.pagina -= 1;
+  await cargar(estado.usarDescubrir);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* =============================================
+   LISTENERS — POPUP
+   ============================================= */
+
+// Abrir con click
+contenedorGrid.addEventListener("click", async (e) => {
+  const tarjeta = e.target.closest(".main__media");
+  if (!tarjeta) return;
+
+  try {
+    const detalle = await fetchDetalle(tarjeta.dataset.id);
+    mostrarPopup(detalle);
+  } catch (e) {
+    console.error("Error al cargar detalle:", e);
+  }
+});
+
+// Abrir con teclado (Enter / Espacio)
+contenedorGrid.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const tarjeta = e.target.closest(".main__media");
+  if (!tarjeta) return;
+  e.preventDefault();
+
+  try {
+    const detalle = await fetchDetalle(tarjeta.dataset.id);
+    mostrarPopup(detalle);
+  } catch (e) {
+    console.error("Error al cargar detalle:", e);
+  }
+});
+
+// Cerrar con botón o click fuera del contenedor
+popup.addEventListener("click", (e) => {
+  if (e.target.closest("#btn-cerrar-popup") || e.target === popup) {
+    cerrarPopup();
+  }
+});
+
+// Cerrar con Escape
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !popup.hidden) cerrarPopup();
 });
 
 /* =============================================

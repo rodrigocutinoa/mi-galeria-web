@@ -9,6 +9,10 @@ const IMG_PLACEHOLDER = "https://placehold.co/300x450?text=Sin+imagen";
 /* =============================================
    REFERENCIAS AL DOM
    ============================================= */
+const btnTema           = document.getElementById("btn-tema");
+const iconoLuna         = document.getElementById("icono-luna");
+const iconoSol          = document.getElementById("icono-sol");
+const labelTema         = document.getElementById("label-tema");
 const contenedorGrid    = document.getElementById("populares");
 const contenedorGeneros = document.getElementById("filtro-generos");
 const estadoEl          = document.getElementById("estado");
@@ -514,6 +518,34 @@ popup.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !popup.hidden) cerrarPopup();
 });
+
+/* =============================================
+   LISTENER — TOGGLE MODO OSCURO / CLARO
+   ============================================= */
+btnTema.addEventListener("click", () => {
+  const estaClaro = document.body.classList.toggle("tema-claro");
+
+  // Actualiza ícono
+  iconoLuna.hidden = estaClaro;
+  iconoSol.hidden  = !estaClaro;
+
+  // Actualiza texto y aria
+  labelTema.textContent = estaClaro ? "Modo oscuro" : "Modo claro";
+  btnTema.setAttribute("aria-label",   estaClaro ? "Activar modo oscuro" : "Activar modo claro");
+  btnTema.setAttribute("aria-pressed", estaClaro ? "true" : "false");
+
+  // Persiste preferencia en localStorage
+  localStorage.setItem("tema", estaClaro ? "claro" : "oscuro");
+});
+
+/* Recupera preferencia al cargar */
+if (localStorage.getItem("tema") === "claro") {
+  document.body.classList.add("tema-claro");
+  iconoLuna.hidden = true;
+  iconoSol.hidden  = false;
+  labelTema.textContent = "Modo oscuro";
+  btnTema.setAttribute("aria-pressed", "true");
+}
 
 /* =============================================
    INICIO

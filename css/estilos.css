@@ -567,3 +567,47 @@ a {
     transform: translateY(12px);
   }
 }
+
+/* =============================================
+   TEMA CLARO — variables override
+   ============================================= */
+body.tema-claro {
+  --bg:           #f4f4f8;
+  --sidebar:      #e2e2ea;
+  --card:         #ffffff;
+  --card-hover:   #e9e9f0;
+  --btn:          #ffffff;
+  --btn-hover:    #d4d4de;
+  --text:         #17171b;
+  --text-muted:   #5f5f70;
+}
+
+/* =============================================
+   BOTÓN TOGGLE TEMA
+   ============================================= */
+.main__tema {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn--tema {
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 14px;
+  background: var(--card);
+  border: 0.5px solid var(--card-hover);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn--tema:hover {
+  background: var(--card-hover);
+}
+
+/* Transición suave al cambiar tema */
+body,
+.sidebar,
+.main__media,
+.media__contenedor,
+.sidebar__input {
+  transition: background 0.3s ease, color 0.3s ease;
+}

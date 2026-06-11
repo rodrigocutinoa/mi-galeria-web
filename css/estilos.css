@@ -458,12 +458,14 @@ a {
 
 /* Popup responsivo en móvil */
 @media (max-width: 768px) {
-
+  .media__contenedor {
+    flex-direction: column;
     padding: 24px;
   }
 
   .media__poster {
     width: 100%;
-
+    max-width: 200px;
+    align-self: center;
   }
 }

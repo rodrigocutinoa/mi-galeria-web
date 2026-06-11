@@ -37,7 +37,7 @@ async function fetchGeneros(tipo = "movie") {
 /* =============================================
    FETCH: POPULARES
    ============================================= */
- function fetchPopulares(tipo = "movie", pagina = 1) {
+async function fetchPopulares(tipo = "movie", pagina = 1) {
   const url = `${BASE_URL}/${tipo}/popular?api_key=${API_KEY}&language=es-MX&page=${pagina}`;
   const respuesta = await fetch(url);
   if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);

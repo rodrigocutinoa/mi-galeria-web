@@ -202,6 +202,25 @@ async function fetchDetalle(id) {
 }
 
 /* =============================================
+   RENDER: SKELETONS (placeholders de carga)
+   ============================================= */
+function mostrarSkeletons(cantidad = 12) {
+  ocultarEstado();
+  contenedorGrid.innerHTML = "";
+
+  for (let i = 0; i < cantidad; i++) {
+    const sk = document.createElement("div");
+    sk.className = "skeleton";
+    sk.innerHTML = `
+      <div class="skeleton__img"></div>
+      <div class="skeleton__line"></div>
+      <div class="skeleton__line skeleton__line--short"></div>
+    `;
+    contenedorGrid.appendChild(sk);
+  }
+}
+
+/* =============================================
    RENDER: TARJETAS
    ============================================= */
 function renderTarjetas(resultados, generos) {
@@ -306,8 +325,13 @@ function mostrarPopup(item) {
 }
 
 function cerrarPopup() {
-  popup.hidden = true;
-  popupContenedor.innerHTML = "";
+  popupContenedor.classList.add("media__contenedor--cerrando");
+
+  popupContenedor.addEventListener("animationend", () => {
+    popup.hidden = true;
+    popupContenedor.innerHTML = "";
+    popupContenedor.classList.remove("media__contenedor--cerrando");
+  }, { once: true }); // once: true → se auto-elimina después de ejecutarse
 }
 
 /* =============================================

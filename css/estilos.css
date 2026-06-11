@@ -469,3 +469,101 @@ a {
     align-self: center;
   }
 }
+
+/* =============================================
+   TRANSICIONES DE CARGA
+   ============================================= */
+.main__media {
+  animation: fadeInUp 0.3s ease both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Retraso escalonado por tarjeta */
+.main__media:nth-child(1)  { animation-delay: 0.03s; }
+.main__media:nth-child(2)  { animation-delay: 0.06s; }
+.main__media:nth-child(3)  { animation-delay: 0.09s; }
+.main__media:nth-child(4)  { animation-delay: 0.12s; }
+.main__media:nth-child(5)  { animation-delay: 0.15s; }
+.main__media:nth-child(6)  { animation-delay: 0.18s; }
+.main__media:nth-child(7)  { animation-delay: 0.21s; }
+.main__media:nth-child(8)  { animation-delay: 0.24s; }
+.main__media:nth-child(9)  { animation-delay: 0.27s; }
+.main__media:nth-child(10) { animation-delay: 0.30s; }
+.main__media:nth-child(n+11) { animation-delay: 0.33s; }
+
+/* Skeleton loader — placeholder mientras carga */
+.skeleton {
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.skeleton__img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(
+    90deg,
+    var(--card) 25%,
+    var(--card-hover) 50%,
+    var(--card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton__line {
+  height: 12px;
+  margin: 10px 10px 6px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--card) 25%,
+    var(--card-hover) 50%,
+    var(--card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton__line--short {
+  width: 60%;
+  margin: 0 10px 10px;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* =============================================
+   TRANSICIÓN DE ENTRADA — POPUP
+   ============================================= */
+.media__contenedor {
+  animation: fadeInUp 0.25s ease both;
+}
+
+.media__contenedor--cerrando {
+  animation: fadeOutDown 0.2s ease both;
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}

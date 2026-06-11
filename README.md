@@ -1,61 +1,82 @@
-## mi-galeria-web
+# 🎬 Mi Galería de Películas
 
-# Estructura del proyecto
+Galería web responsiva que consume la API pública de **The Movie Database (TMDB)**
+y muestra películas y series con filtros por género, rango de años y paginación.
+
+
+## 🌐 Demo en vivo
+
+👉 [Ver sitio publicado](https://rodrigocutinoa.github.io/mi-galeria-web/)
+
+----------
+
+
+## 🛠️ Tecnologías utilizadas
+
+| Tecnología   | Uso                                                                 |
+|--------------|---------------------------------------------------------------------|
+| HTML5        | Estructura semántica: `aside`, `main`, `section`, `nav`, `footer`  |
+| CSS3         | Variables `:root`, Grid responsivo, Flexbox, media queries, `:focus`|
+| JavaScript   | `fetch`, `async/await`, `try/catch`, manipulación del DOM           |
+| TMDB API     | Datos reales de películas y series (gratuita, sin clave de pago)    |
+
+----------
+
+
+## 📁 Estructura del proyecto
+
 mi-galeria-web/
-├── index.html
+├── index.html          # Estructura HTML semántica y accesible
 ├── css/
-│   └── estilos.css
+│   └── estilos.css     # Variables, Grid, Flexbox, responsive, a11y
 ├── js/
-│   └── app.js
+│   └── app.js          # fetch, filtros, paginación, popup, errores
 ├── .gitignore
 └── README.md
 
 
+## ✨ Funcionalidades
 
-# 🍽️ Mi Galería Web - Películas
-Galería responsiva de recetas que consume una API pública
+- Galería de películas o series populares al cargar
+- Filtro por tipo: Películas / Series
+- Filtro por género desde el sidebar
+- Filtro por rango de años con validación
+- Paginación: anterior / siguiente manteniendo el contexto
+- Popup de detalle al hacer click en una tarjeta
+- Estado de carga y mensajes de error visibles al usuario
+- Diseño responsivo: móvil, tablet y escritorio
+- Accesibilidad: `aria-label`, `aria-live`, `aria-pressed`, navegación por teclado
 
-## 🌐 Demo
-[Ver sitio publicado](https://TU-USUARIO.github.io/mi-galeria-web)
-
-## 🛠️ Tecnologías
-- HTML5 semántico
-- CSS3 (Grid, variables, media queries)
-- JavaScript (fetch, async/await)
-- API
-
-## 🚀 Cómo correr localmente
-Clona el repo y abre index.html en tu navegador. Sin instalaciones.
+----------
 
 
+## 🚀 Cómo ejecutar localmente
 
-## 🛠️ Plan de implementación
-# feat: estructura inicial del proyecto
-Crea carpetas css/, js/ y archivos vacíos index.html, estilos.css, app.js, .gitignore
+No requiere instalación ni dependencias:
 
-# feat: agrega esqueleto HTML semántico
-header, main, aside, section, footer — aria-*, lang="es", labels asociados
+```bash
+git clone git clone https://github.com/rodrigocutinoa/mi-galeria-web.git
+cd mi-galeria-web
+```
 
-# feat: agrega estilos base y paleta de colores
-Variables :root, reset, tipografía Montserrat, clase .sr-only
+Abre `index.html` en tu navegador.
+Si usas VS Code instala **Live Server** para evitar problemas de CORS.
 
-# feat: agrega layout grid responsivo de tarjetas
-CSS Grid con auto-fill, tarjetas article.main__media, 3 media queries
+----------
 
-# feat:agrega estilos de sidebar y botones
-Sidebar sticky, .btn, .btn--active, :focus outline 3px, :hover con transición
 
-# feat: implementa fetch de películas desde TMDB
-fetchPopulares(), fetchGeneros(), renderTarjetas() — estado inicial al cargar
+## 📡 API utilizada
 
-# feat: agrega manejo de errores y estado de carga
-try/catch en todos los fetch, response.ok, div#estado con aria-live
+**The Movie Database (TMDB)** — [themoviedb.org](https://www.themoviedb.org)
 
-# fea: tagrega filtro por género y tipo Película/Serie
-fetchDescubrir(), listeners sidebar, estado.tipo / estado.idGenero, aria-pressed
+| Endpoint                  | Uso                              |
+|---------------------------|----------------------------------|
+| `GET /movie/popular`      | Películas populares              |
+| `GET /tv/popular`         | Series populares                 |
+| `GET /discover/movie`     | Películas con filtros            |
+| `GET /discover/tv`        | Series con filtros               |
+| `GET /genre/movie/list`   | Lista de géneros de películas    |
+| `GET /genre/tv/list`      | Lista de géneros de series       |
+| `GET /{tipo}/{id}`        | Detalle de un título             |
 
-# feat: agrega paginación y popup de detalle
-Botones anterior/siguiente, fetchDetalle(), modal accesible, cierre con Escape 
-
-# docsagrega README y configura GitHub Pages
-README con enlace al sitio, tabla de commits, instrucciones de instalación
+----------

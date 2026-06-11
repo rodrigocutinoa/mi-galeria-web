@@ -11,8 +11,14 @@ const IMG_PLACEHOLDER = "https://placehold.co/300x450?text=Sin+imagen";
    ============================================= */
 const contenedorGrid    = document.getElementById("populares");
 const contenedorGeneros = document.getElementById("filtro-generos");
+const estadoEl          = document.getElementById("estado");
 const tituloGaleria     = document.getElementById("titulo-galeria");
 const numPagina         = document.getElementById("num-pagina");
+const inputAnoMin       = document.getElementById("anos-min");
+const inputAnoMax       = document.getElementById("anos-max");
+const btnBuscar         = document.getElementById("btn-buscar");
+const btnMovie          = document.getElementById("movie");
+const btnTv             = document.getElementById("tv");
 
 /* =============================================
    ESTADO DE LA APLICACIÓN
@@ -24,14 +30,43 @@ let estado = {
 };
 
 /* =============================================
+   HELPERS DE UI
+   ============================================= */
+function mostrarEstado(mensaje, tipo = "") {
+  estadoEl.textContent = mensaje;
+  estadoEl.className   = "estado" + (tipo ? ` estado--${tipo}` : "");
+  estadoEl.hidden      = false;
+  contenedorGrid.innerHTML = "";
+}
+
+function ocultarEstado() {
+  estadoEl.hidden = true;
+}
+
+function actualizarNumeroPagina() {
+  numPagina.textContent = `Página ${estado.pagina}`;
+  contenedorGrid.dataset.pagina = estado.pagina;
+}
+
+function obtenerNombreGenero(id, generos) {
+  const encontrado = generos.find((g) => g.id === id);
+  return encontrado ? encontrado.name : "—";
+}
+
+/* =============================================
    FETCH: GÉNEROS
    ============================================= */
 async function fetchGeneros(tipo = "movie") {
   const url = `${BASE_URL}/genre/${tipo}/list?api_key=${API_KEY}&language=es-MX`;
-  const respuesta = await fetch(url);
-  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
-  const datos = await respuesta.json();
-  return datos.genres;
+  try {
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+    const datos = await respuesta.json();
+    return datos.genres;
+  } catch (e) {
+    console.error("Error al cargar géneros:", e);
+    return [];
+  }
 }
 
 /* =============================================
@@ -46,26 +81,59 @@ async function fetchPopulares(tipo = "movie", pagina = 1) {
 }
 
 /* =============================================
-   HELPERS
+   FETCH: DESCUBRIR (con filtros)
    ============================================= */
-function obtenerNombreGenero(id, generos) {
-  const encontrado = generos.find((g) => g.id === id);
-  return encontrado ? encontrado.name : "—";
-}
+async function fetchDescubrir() {
+  const { tipo, pagina, idGenero } = estado;
+  const anoMin = inputAnoMin.value || 1950;
+  const anoMax = inputAnoMax.value || 2025;
 
-function actualizarNumeroPagina() {
-  numPagina.textContent = `Página ${estado.pagina}`;
-  contenedorGrid.dataset.pagina = estado.pagina;
+  // Validación de rango de años
+  if (parseInt(anoMin) > parseInt(anoMax)) {
+    inputAnoMin.classList.add("sidebar__input--error");
+    inputAnoMax.classList.add("sidebar__input--error");
+    mostrarEstado("El año mínimo no puede ser mayor que el máximo.", "error");
+    return null;
+  }
+
+  inputAnoMin.classList.remove("sidebar__input--error");
+  inputAnoMax.classList.remove("sidebar__input--error");
+
+  let url;
+
+  if (tipo === "movie") {
+    url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=es-MX&page=${pagina}`
+        + `&release_date.gte=${anoMin}-01-01`
+        + `&release_date.lte=${anoMax}-12-31`
+        + `&sort_by=popularity.desc`
+        + (idGenero ? `&with_genres=${idGenero}` : "");
+  } else {
+    url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=es-MX&page=${pagina}`
+        + `&first_air_date.gte=${anoMin}-01-01`
+        + `&first_air_date.lte=${anoMax}-12-31`
+        + `&sort_by=popularity.desc`
+        + (idGenero ? `&with_genres=${idGenero}` : "");
+  }
+
+  const respuesta = await fetch(url);
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  const datos = await respuesta.json();
+  return datos.results;
 }
 
 /* =============================================
    RENDER: TARJETAS
    ============================================= */
 function renderTarjetas(resultados, generos) {
+  if (!resultados || resultados.length === 0) {
+    mostrarEstado("No se encontraron resultados.");
+    return;
+  }
+
+  ocultarEstado();
   contenedorGrid.innerHTML = "";
 
   resultados.forEach((item) => {
-    // Validación: descarta items sin título
     if (!item || (!item.title && !item.name)) return;
 
     const titulo = item.title  || item.name  || "Sin título";
@@ -107,6 +175,7 @@ function renderTarjetas(resultados, generos) {
    ============================================= */
 function renderGeneros(generos) {
   contenedorGeneros.innerHTML = "";
+  estado.idGenero = null;
 
   generos.forEach((genero) => {
     const btn = document.createElement("button");
@@ -121,16 +190,91 @@ function renderGeneros(generos) {
 /* =============================================
    CARGA PRINCIPAL
    ============================================= */
-async function cargar() {
-  contenedorGrid.innerHTML = "<p style='color:#a0a0ab;padding:20px'>Cargando...</p>";
+async function cargar(usarDescubrir = false) {
+  mostrarEstado("Cargando...", "cargando");
 
-  const generos    = await fetchGeneros(estado.tipo);
-  const resultados = await fetchPopulares(estado.tipo, estado.pagina);
+  try {
+    const generos = await fetchGeneros(estado.tipo);
+    renderGeneros(generos);
 
-  renderGeneros(generos);
-  renderTarjetas(resultados, generos);
-  actualizarNumeroPagina();
+    const resultados = usarDescubrir
+      ? await fetchDescubrir()
+      : await fetchPopulares(estado.tipo, estado.pagina);
+
+    if (resultados === null) return; // Error de validación
+
+    renderTarjetas(resultados, generos);
+    actualizarNumeroPagina();
+
+  } catch (e) {
+    console.error("Error al cargar datos:", e);
+    mostrarEstado("No se pudieron cargar los datos. Intenta de nuevo.", "error");
+  }
 }
+
+/* =============================================
+   LISTENERS — TIPO (Películas / Series)
+   ============================================= */
+btnMovie.addEventListener("click", async () => {
+  estado.tipo   = "movie";
+  estado.pagina = 1;
+
+  btnMovie.classList.add("btn--active");
+  btnMovie.setAttribute("aria-pressed", "true");
+  btnTv.classList.remove("btn--active");
+  btnTv.setAttribute("aria-pressed", "false");
+
+  tituloGaleria.textContent = "Películas Populares";
+  await cargar();
+});
+
+btnTv.addEventListener("click", async () => {
+  estado.tipo   = "tv";
+  estado.pagina = 1;
+
+  btnTv.classList.add("btn--active");
+  btnTv.setAttribute("aria-pressed", "true");
+  btnMovie.classList.remove("btn--active");
+  btnMovie.setAttribute("aria-pressed", "false");
+
+  tituloGaleria.textContent = "Series Populares";
+  await cargar();
+});
+
+/* =============================================
+   LISTENERS — GÉNERO
+   ============================================= */
+contenedorGeneros.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const estaActivo = btn.classList.contains("btn--active");
+
+  // Quita activo de todos
+  contenedorGeneros.querySelectorAll(".btn").forEach((b) => {
+    b.classList.remove("btn--active");
+    b.setAttribute("aria-pressed", "false");
+  });
+
+  // Toggle: si ya estaba activo lo desactiva
+  if (!estaActivo) {
+    btn.classList.add("btn--active");
+    btn.setAttribute("aria-pressed", "true");
+    estado.idGenero = btn.dataset.id;
+  } else {
+    estado.idGenero = null;
+  }
+});
+
+/* =============================================
+   LISTENER — BOTÓN BUSCAR
+   ============================================= */
+btnBuscar.addEventListener("click", async () => {
+  estado.pagina = 1;
+  const labelTipo = estado.tipo === "movie" ? "Películas" : "Series";
+  tituloGaleria.textContent = `Resultados — ${labelTipo}`;
+  await cargar(true); // usa fetchDescubrir
+});
 
 /* =============================================
    INICIO

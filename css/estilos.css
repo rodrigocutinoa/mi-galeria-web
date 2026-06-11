@@ -1,1 +1,105 @@
-/* estilos por agregar */
+/* =============================================
+   VARIABLES GLOBALES
+   ============================================= */
+:root {
+  --bg:           #17171b;
+  --sidebar:      #110f14;
+  --card:         #2d2d33;
+  --card-hover:   #3b3b44;
+  --accent:       #c71717;
+  --accent-hover: #a41111;
+  --btn:          #2d2d33;
+  --btn-hover:    #3b3b44;
+  --text:         #ffffff;
+  --text-muted:   #a0a0ab;
+  --radius:       10px;
+  --font:         'Montserrat', sans-serif;
+}
+
+/* =============================================
+   RESET
+   ============================================= */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =============================================
+   ACCESIBILIDAD — solo para lectores de pantalla
+   ============================================= */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =============================================
+   BASE
+   ============================================= */
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* =============================================
+   BOTONES
+   ============================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  color: var(--text);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: var(--btn);
+  border-radius: 50px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+  background: var(--btn-hover);
+}
+
+.btn:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn--100    { width: 100%; }
+.btn--rojo   { background: var(--accent); }
+.btn--rojo:hover { background: var(--accent-hover); }
+
+.btn--active { background: var(--accent); }
+.btn--active:hover { background: var(--accent); }
+
+.btn__icono {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}

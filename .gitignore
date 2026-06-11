@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+__MACOSX/
+
+# Editor
+.vscode/
+.idea/
+
+# Node (por si se agrega bundler más adelante)
+node_modules/
+dist/
+*.map
+
+# Variables de entorno (nunca subir claves)
+.env
+.env.local
+
+# Logs
+*.log

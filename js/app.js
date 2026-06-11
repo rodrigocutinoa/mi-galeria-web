@@ -16,6 +16,7 @@ const tituloGaleria     = document.getElementById("titulo-galeria");
 const numPagina         = document.getElementById("num-pagina");
 const inputAnoMin       = document.getElementById("anos-min");
 const inputAnoMax       = document.getElementById("anos-max");
+const inputNombre       = document.getElementById("input-nombre");
 const btnBuscar         = document.getElementById("btn-buscar");
 const btnMovie          = document.getElementById("movie");
 const btnTv             = document.getElementById("tv");
@@ -31,7 +32,7 @@ let estado = {
   tipo:          "movie",
   pagina:        1,
   idGenero:      null,
-  usarDescubrir: false, // recuerda si el último fetch fue con filtros
+  usarDescubrir: false,
 };
 
 /* =============================================
@@ -56,6 +57,35 @@ function actualizarNumeroPagina() {
 function obtenerNombreGenero(id, generos) {
   const encontrado = generos.find((g) => g.id === id);
   return encontrado ? encontrado.name : "—";
+}
+
+/* =============================================
+   HELPERS DE FILTROS
+   ============================================= */
+
+// Retorna true si el usuario ingresó algún filtro activo
+function tieneFiltros() {
+  const nombre = inputNombre.value.trim();
+  const anoMin = inputAnoMin.value.trim();
+  const anoMax = inputAnoMax.value.trim();
+  return nombre !== "" || anoMin !== "" || anoMax !== "";
+}
+
+// Valida que anoMin no sea mayor que anoMax
+function validarAnos() {
+  const anoMin = inputAnoMin.value;
+  const anoMax = inputAnoMax.value;
+
+  if (anoMin && anoMax && parseInt(anoMin) > parseInt(anoMax)) {
+    inputAnoMin.classList.add("sidebar__input--error");
+    inputAnoMax.classList.add("sidebar__input--error");
+    mostrarEstado("El año mínimo no puede ser mayor que el máximo.", "error");
+    return false;
+  }
+
+  inputAnoMin.classList.remove("sidebar__input--error");
+  inputAnoMax.classList.remove("sidebar__input--error");
+  return true;
 }
 
 /* =============================================
@@ -86,22 +116,59 @@ async function fetchPopulares(tipo = "movie", pagina = 1) {
 }
 
 /* =============================================
-   FETCH: DESCUBRIR (con filtros)
+   FETCH: BÚSQUEDA POR NOMBRE
+   Usa el endpoint /search que acepta query
+   ============================================= */
+async function fetchBuscarPorNombre() {
+  const { tipo, pagina, idGenero } = estado;
+  const nombre = inputNombre.value.trim();
+  const anoMin = inputAnoMin.value.trim();
+  const anoMax = inputAnoMax.value.trim();
+
+  // /search/movie o /search/tv — busca por nombre
+  let url = `${BASE_URL}/search/${tipo}?api_key=${API_KEY}&language=es-MX&page=${pagina}`
+          + `&query=${encodeURIComponent(nombre)}`;
+
+  const respuesta = await fetch(url);
+  if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+  const datos = await respuesta.json();
+  let resultados = datos.results || [];
+
+  // Filtrado AND por año mínimo (client-side sobre los resultados)
+  if (anoMin) {
+    resultados = resultados.filter((item) => {
+      const fecha = item.release_date || item.first_air_date || "";
+      const anio  = parseInt(fecha.substring(0, 4));
+      return anio >= parseInt(anoMin);
+    });
+  }
+
+  // Filtrado AND por año máximo (client-side)
+  if (anoMax) {
+    resultados = resultados.filter((item) => {
+      const fecha = item.release_date || item.first_air_date || "";
+      const anio  = parseInt(fecha.substring(0, 4));
+      return anio <= parseInt(anoMax);
+    });
+  }
+
+  // Filtrado AND por género si hay uno seleccionado
+  if (idGenero) {
+    resultados = resultados.filter((item) =>
+      item.genre_ids?.includes(parseInt(idGenero))
+    );
+  }
+
+  return resultados;
+}
+
+/* =============================================
+   FETCH: DESCUBRIR (solo años + género, sin nombre)
    ============================================= */
 async function fetchDescubrir() {
   const { tipo, pagina, idGenero } = estado;
   const anoMin = inputAnoMin.value || 1950;
   const anoMax = inputAnoMax.value || 2025;
-
-  if (parseInt(anoMin) > parseInt(anoMax)) {
-    inputAnoMin.classList.add("sidebar__input--error");
-    inputAnoMax.classList.add("sidebar__input--error");
-    mostrarEstado("El año mínimo no puede ser mayor que el máximo.", "error");
-    return null;
-  }
-
-  inputAnoMin.classList.remove("sidebar__input--error");
-  inputAnoMax.classList.remove("sidebar__input--error");
 
   let url;
   if (tipo === "movie") {
@@ -235,8 +302,6 @@ function mostrarPopup(item) {
   `;
 
   popup.hidden = false;
-
-  // Foco al botón cerrar para accesibilidad
   document.getElementById("btn-cerrar-popup")?.focus();
 }
 
@@ -247,6 +312,10 @@ function cerrarPopup() {
 
 /* =============================================
    CARGA PRINCIPAL
+   Decide qué endpoint usar según los filtros activos:
+   - Sin filtros           → fetchPopulares()
+   - Solo años / género    → fetchDescubrir()
+   - Con nombre (± años)   → fetchBuscarPorNombre()
    ============================================= */
 async function cargar(usarDescubrir = false) {
   estado.usarDescubrir = usarDescubrir;
@@ -256,9 +325,22 @@ async function cargar(usarDescubrir = false) {
     const generos = await fetchGeneros(estado.tipo);
     renderGeneros(generos);
 
-    const resultados = usarDescubrir
-      ? await fetchDescubrir()
-      : await fetchPopulares(estado.tipo, estado.pagina);
+    let resultados;
+
+    if (usarDescubrir) {
+      const nombre = inputNombre.value.trim();
+
+      if (nombre !== "") {
+        // Tiene nombre → búsqueda por nombre con filtro AND de años
+        resultados = await fetchBuscarPorNombre();
+      } else {
+        // Sin nombre → discover por años y género
+        resultados = await fetchDescubrir();
+      }
+    } else {
+      // Carga inicial o cambio de tipo → populares
+      resultados = await fetchPopulares(estado.tipo, estado.pagina);
+    }
 
     if (resultados === null) return;
 
@@ -327,9 +409,32 @@ contenedorGeneros.addEventListener("click", (e) => {
    LISTENER — BOTÓN BUSCAR
    ============================================= */
 btnBuscar.addEventListener("click", async () => {
+  if (!validarAnos()) return;
+
   estado.pagina = 1;
+  const nombre    = inputNombre.value.trim();
   const labelTipo = estado.tipo === "movie" ? "Películas" : "Series";
-  tituloGaleria.textContent = `Resultados — ${labelTipo}`;
+
+  tituloGaleria.textContent = nombre
+    ? `Resultados — "${nombre}"`
+    : `Resultados — ${labelTipo}`;
+
+  await cargar(true);
+});
+
+// Buscar también al presionar Enter en el input nombre
+inputNombre.addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  if (!validarAnos()) return;
+
+  estado.pagina = 1;
+  const nombre    = inputNombre.value.trim();
+  const labelTipo = estado.tipo === "movie" ? "Películas" : "Series";
+
+  tituloGaleria.textContent = nombre
+    ? `Resultados — "${nombre}"`
+    : `Resultados — ${labelTipo}`;
+
   await cargar(true);
 });
 
@@ -352,12 +457,9 @@ btnAnterior.addEventListener("click", async () => {
 /* =============================================
    LISTENERS — POPUP
    ============================================= */
-
-// Abrir con click
 contenedorGrid.addEventListener("click", async (e) => {
   const tarjeta = e.target.closest(".main__media");
   if (!tarjeta) return;
-
   try {
     const detalle = await fetchDetalle(tarjeta.dataset.id);
     mostrarPopup(detalle);
@@ -366,13 +468,11 @@ contenedorGrid.addEventListener("click", async (e) => {
   }
 });
 
-// Abrir con teclado (Enter / Espacio)
 contenedorGrid.addEventListener("keydown", async (e) => {
   if (e.key !== "Enter" && e.key !== " ") return;
   const tarjeta = e.target.closest(".main__media");
   if (!tarjeta) return;
   e.preventDefault();
-
   try {
     const detalle = await fetchDetalle(tarjeta.dataset.id);
     mostrarPopup(detalle);
@@ -381,14 +481,12 @@ contenedorGrid.addEventListener("keydown", async (e) => {
   }
 });
 
-// Cerrar con botón o click fuera del contenedor
 popup.addEventListener("click", (e) => {
   if (e.target.closest("#btn-cerrar-popup") || e.target === popup) {
     cerrarPopup();
   }
 });
 
-// Cerrar con Escape
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !popup.hidden) cerrarPopup();
 });

@@ -35,7 +35,7 @@
         </div>
 
         <div class="sidebar__anos">
-          <h2 class="sidebar__titulo">Años</h2>
+          <h2 class="sidebar__titulo">Buscar por Años</h2>
           <div class="sidebar__contenedor-inputs">
             <label for="anos-min" class="sr-only">Año mínimo</label>
             <input
@@ -53,12 +53,27 @@
               id="anos-max"
               type="number"
               min="1950"
-              max="2025"
-              value="2025"
-              placeholder="2025"
+              max="20256"
+              value="2026"
+              placeholder="2026"
             />
           </div>
         </div>
+
+        <!-- AGREGA ESTO antes del div.sidebar__buscar -->
+        <div class="sidebar__nombre">
+          <h2 class="sidebar__titulo">Buscar por nombre</h2>
+          <label for="input-nombre" class="sr-only">Nombre de película o serie</label>
+          <input
+            class="sidebar__input"
+            id="input-nombre"
+            type="text"
+            placeholder="Ej: Inception..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="sidebar__buscar">
 
         <div class="sidebar__buscar">
           <button class="btn btn--100 btn--rojo" id="btn-buscar">

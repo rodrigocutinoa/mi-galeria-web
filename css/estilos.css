@@ -582,6 +582,11 @@ body.tema-claro {
   --text-muted:   #5f5f70;
 }
 
+body.tema-claro .btn--rojo,
+body.tema-claro .btn--active {
+  color: #ffffff;
+}
+
 /* =============================================
    BOTÓN TOGGLE TEMA
    ============================================= */
